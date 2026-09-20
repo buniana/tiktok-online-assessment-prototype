@@ -1,0 +1,8 @@
+node_modules
+dist
+.DS_Store
+.vercel
+*.log
+
+# the designer's exported Figma frames: used only for measuring while building, not part of the repository
+reference/
