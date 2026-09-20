@@ -13,7 +13,7 @@ const V1_SHOTS = FIGMA_COPY ? [
 ];
 
 export const SCRIPT = {
-  title: ['What do you want', 'to ', 'shoot', '?'],
+  title: ['What do you want', 'to ', 'film', '?'],
   subtitle: 'Let’s plan your next trendy video together.',
   userTurns: [
     'Hi. I am at a beach and want to shoot a quick video about the ocean, the beach view',

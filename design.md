@@ -38,7 +38,7 @@ All 7+ states we found under `Plan with AI Chat` in Figma map to this single log
 Full-bleed, pure black background (`#000000`).
 
 **Header block**
-- Title: "What do you want to **shoot**?" — TikTok Sans **Bold, 36px**, white, with the last word in accent cyan `#00D0D5`
+- Title: "What do you want to **film**?" (changed from "shoot" on 2026-09-21) — TikTok Sans **Bold, 36px**, white, with the last word in accent cyan `#00D0D5`
 - Subtitle: "Let's plan your next trendy video together." — TikTok Sans **SemiBold, 20px**, white
 - Gap between title block and subtitle: 12px (auto-layout)
 
