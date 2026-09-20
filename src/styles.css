@@ -90,11 +90,15 @@ body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .cam-tab.post { left: 220.5px; color: #fff; }
 .cam-tab.plan { left: 288.6px; color: var(--inactive); cursor: pointer; padding: 12px 14px; }
 .cam-tab.plan:hover { color: #ccc; }
-.cam-hint { position: absolute; left: 283px; top: 894px; pointer-events: none; transform: rotate(-16deg); transform-origin: 50% 90%; animation: tap 1.8s var(--ease) infinite; }
+/* Frame.svg at 85 % (73.1 x 62.9). Its fingertip (30.5, 26.75 in the drawing) is at (305.75, 904): same column as the old hand's fingertip, 6.5 lower,
+   so the tap ripple starts 2 below the PLAN text (text ink bottom 893.3) instead of covering it */
+.cam-hint { position: absolute; left: 279.82px; top: 881.26px; pointer-events: none; transform-origin: 50% 90%; animation: tap 1.8s var(--ease) infinite; }
 
 /* ------------------------------------------------------------------ plan flow: slide-in takeover */
 .flow { transform: translateY(100%); transition: transform 0.56s var(--ease-out); z-index: 5; }
 .flow.is-open { transform: translateY(0); }
+/* back: slides down again, a touch quicker than it came in */
+.flow.is-leaving { transition: transform 0.46s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; }
 
 /* hero (voice screen heading): sits 90px lower until the first message lands (measured from frames 02 vs 04) */
 .hero { position: absolute; left: 24px; top: 107px; width: 392px; transition: transform 0.7s var(--ease); }
@@ -108,10 +112,14 @@ body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
 /* nav (plan header) */
 .nav { position: absolute; left: 0; right: 0; top: 0; height: 112px; z-index: 30; background: var(--bg); opacity: 0; transform: translateY(-16px); pointer-events: none; transition: opacity 0.3s ease, transform 0.5s var(--ease); }
-.flow.is-plan .nav { opacity: 1; transform: none; pointer-events: auto; transition-delay: 0.12s; }
-.nav-back { position: absolute; left: 12px; top: 58px; width: 44px; height: 44px; display: grid; place-items: center; background: none; border: 0; cursor: pointer; }
-.nav-title { position: absolute; left: 0; right: 0; top: 80px; transform: translateY(-50%); margin: 0; text-align: center; font: 700 24px/1.3 var(--font); }
-.nav-rule { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--rule); }
+/* the header (back arrow + PLAN) is on every screen of the chat, coming in once the chat has slid up; the hairline under it is plan-only */
+.flow.is-open .nav { opacity: 1; transform: none; pointer-events: auto; transition-delay: 0.22s; }
+.flow.is-plan .nav { transition-delay: 0s; }
+.nav-back { position: absolute; left: 12px; top: 58px; width: 44px; height: 44px; z-index: 2; display: grid; place-items: center; background: none; border: 0; cursor: pointer; transition: opacity 0.15s ease; }
+.nav-back:active { opacity: 0.55; }
+.nav-title { position: absolute; left: 0; right: 0; top: 80px; transform: translateY(-50%); margin: 0; text-align: center; font: 700 24px/1.3 var(--font); pointer-events: none; } /* the title box spans the whole header: it must not catch taps meant for the back button */
+.nav-rule { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--rule); pointer-events: none; opacity: 0; transition: opacity 0.3s ease; }
+.flow.is-plan .nav-rule { opacity: 1; transition-delay: 0.12s; }
 
 /* chat column */
 .chat {
@@ -258,25 +266,38 @@ body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .rec-hit { position: absolute; left: -50px; top: -50px; width: 100px; height: 100px; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
 /* review buttons */
 .film-actions { position: absolute; left: 0; top: 0; right: 0; z-index: 5; pointer-events: none; }
-.fa { position: absolute; top: 868px; height: 37.8px; padding: 0; border: 0; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 8.2px; font: 600 16px/1.3 var(--font); cursor: pointer; opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity 0.3s ease, transform 0.4s var(--ease-out), filter 0.15s ease; }
+.fa { position: absolute; top: 874px; height: 44px; padding: 0; border: 0; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 8.2px; font: 600 16px/1.3 var(--font); cursor: pointer; opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity 0.3s ease, transform 0.4s var(--ease-out), filter 0.15s ease; }
 .film-actions.on .fa { opacity: 1; transform: none; pointer-events: auto; }
 .film-actions.on .fa-next { transition-delay: 0.06s; }
 .film-actions.on .fa:active { transform: scale(0.96); filter: brightness(0.92); }
-.fa-retake { left: 24.4px; width: 174.4px; background: #fff; color: #000; }
-.fa-next { left: 243.4px; width: 172.4px; background: var(--pink); color: #fff; }
-.fa-next.is-finish { left: 247.2px; top: 869.2px; width: 168.3px; height: 35.5px; }
-/* full-video preview after Finish (placeholder layout) */
+/* both buttons are 204 x 44, 8 apart and 12 from the screen edges, top at 874 (measured on the designer's screenshot IMG_6966, 3x); Next and Finish are the same */
+.fa-retake { left: 12px; width: 204px; background: #fff; color: #000; }
+.fa-next { left: 224px; width: 204px; background: var(--pink); color: #fff; }
+/* full-video preview after Finish (layout measured from the designer's screenshot IMG_6966, 3x: all numbers are design px) */
 .pv { position: absolute; inset: 0; z-index: 8; background: #000; animation: fadeIn 0.4s ease both; }
-.pv-bar { position: absolute; left: 20px; right: 20px; top: 88px; height: 3px; z-index: 3; display: flex; gap: 4px; }
-.pv-bar span { display: block; border-radius: 2px; background: rgba(255, 255, 255, 0.35); overflow: hidden; }
-.pv-bar i { display: block; height: 100%; background: #fff; }
+.pv-icons { position: absolute; left: 0; top: 0; z-index: 4; pointer-events: none; }
+.pv-back { position: absolute; left: 5.5px; top: 87.7px; width: 44px; height: 44px; z-index: 6; padding: 0; border: 0; background: none; cursor: pointer; } /* hit area around the drawn arrow (centre 27.5, 109.7) */
+/* dark glass pills: grey 61 at about 50 % (fits the fill measured over the dark panel) */
+.pv-pill { position: absolute; z-index: 3; border-radius: 999px; background: rgba(61, 61, 61, 0.5); color: #fff; font: 600 16px/1.3 var(--font); pointer-events: none; }
+.pv-pill span { position: absolute; white-space: nowrap; }
+.pv-sound { left: 155px; top: 88px; width: 130px; height: 43.7px; }
+.pv-sound span { left: 34px; top: 11.9px; }
+.pv-autocut { left: 172.3px; top: 797px; width: 95.3px; height: 36px; font-size: 13px; }
+.pv-autocut span { left: 30px; top: 10.5px; }
+.pv-sep { left: 404px; top: 193.7px; z-index: 4; background: rgba(255, 255, 255, 0.34); }
+/* the two labels are 600 at 16.5 px here (fitted to the ink widths of "Your Story" 81.7 and "Next" 35.3 in the screenshot) */
+.pv .fa { font-size: 16.5px; }
+.pv .fa > span { position: relative; top: 1px; } /* text lands on whole pixels: 1 lower sits within 0.3 of the screenshot, as it is 0.7 too high otherwise */
+/* "Your Story": avatar 40 from the pill's left edge, text starts about 4 after it (dark grey text, as measured) */
+.pv-story { justify-content: flex-start; padding-left: 40px; gap: 3.8px; color: #2d2e38; }
+.pv-avatar { flex: none; display: block; margin-top: 0.2px; }
 
 /* ------------------------------------------------------------------ keyframes */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .rise { animation: rise 0.5s var(--ease-out) backwards; animation-delay: var(--d, 0ms); }
 @keyframes hop { 0%, 55%, 100% { transform: translateY(0); } 20% { transform: translateY(-3.5px); } 38% { transform: translateY(1.5px); } }
-@keyframes tap { 0%, 100% { transform: rotate(-16deg) translate(0, 0) scale(1); } 45% { transform: rotate(-16deg) translate(-2px, -3px) scale(0.92); } }
+@keyframes tap { 0%, 100% { transform: translate(0, 0) scale(1); } 45% { transform: translate(-2px, -3px) scale(0.92); } }
 
 /* ------------------------------------------------------------------ debug panel */
 .debug-toggle {

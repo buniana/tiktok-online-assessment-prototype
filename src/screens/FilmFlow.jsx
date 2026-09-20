@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import StatusBar from '../components/StatusBar.jsx';
 import { FlipIcon, FlashIcon, EffectsIcon, TimerIcon, LayoutIcon, BeautyIcon } from '../components/CamTools.jsx';
+import PreviewIcons, { Avatar } from '../components/PreviewIcons.jsx';
 
 // One stock clip behind each shot (Pexels licence, see design.md). The 4th shot of the updated plan
 // reuses the sunset clip until a real one is uploaded.
@@ -110,12 +111,13 @@ const secondsOf = (time) => {
 const captionOf = (script) => (script || '').replace(/^[“”"]+|[“”"]+$/g, '');
 const wordsOf = (s) => s.split(/\s+/).filter(Boolean);
 
-// The whole video: every shot's take played back to back (as long as it was filmed), with one progress segment per
-// shot along the top. It loops until you go back or finish. Layout is a placeholder until there is a frame for it.
+// The whole video: every shot's take played back to back (as long as it was filmed). It loops until you go back or move on.
+// Layout follows the designer's screenshot of the edit screen (IMG_6966, measured at 3x): back arrow and "Add sound" on top,
+// the tool column on the right, AutoCut at the bottom of the video, "Your Story" + "Next" underneath. Only the back arrow and
+// "Next" do anything (back to the last segment / back to the start); "Your Story" is drawn only.
 function Preview({ shots, takes, onBack, onDone }) {
   const lens = useMemo(() => shots.map((s, i) => takes[i] ?? secondsOf(s.time) * 1000), [shots, takes]);
   const [idx, setIdx] = useState(0);
-  const [el, setEl] = useState(0); // ms into the current shot
 
   useEffect(() => {
     let raf = 0;
@@ -130,7 +132,6 @@ function Preview({ shots, takes, onBack, onDone }) {
         i = (i + 1) % lens.length;
         setIdx(i);
       }
-      setEl(e);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -142,25 +143,22 @@ function Preview({ shots, takes, onBack, onDone }) {
       <div className="film-panel">
         <video key={idx} ref={kick} className="film-video" src={CLIPS[Math.min(idx, CLIPS.length - 1)]} autoPlay muted playsInline preload="auto" />
       </div>
-      <div className="pv-bar" aria-hidden="true">
-        {lens.map((l, k) => (
-          <span key={k} style={{ flex: l }}>
-            <i style={{ width: `${k < idx ? 100 : k === idx ? (el / l) * 100 : 0}%` }} />
-          </span>
-        ))}
+      <PreviewIcons />
+      <button type="button" className="pv-back" onClick={onBack} aria-label="Back to the last segment" />
+      <div className="pv-pill pv-sound">
+        <span>Add sound</span>
       </div>
-      <button type="button" className="film-x" onClick={onBack} aria-label="Back to the last segment">
-        <svg width="17.7" height="17.7" viewBox="0 0 17.7 17.7" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round">
-          <path d="M1 1 16.7 16.7M16.7 1 1 16.7" />
-        </svg>
-      </button>
+      <span className="cam-sep pv-sep" />
+      <div className="pv-pill pv-autocut">
+        <span>AutoCut</span>
+      </div>
       <div className="film-actions on">
-        <button type="button" className="fa fa-retake" onClick={onBack}>Back</button>
-        <button type="button" className="fa fa-next is-finish" onClick={onDone}>
-          <span>Done</span>
-          <svg width="19" height="14" viewBox="0 0 19 14" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M1.5 7.5 6.5 12.5 17.5 1.8" />
-          </svg>
+        <button type="button" className="fa fa-retake pv-story" tabIndex={-1}>
+          <Avatar />
+          <span>Your Story</span>
+        </button>
+        <button type="button" className="fa fa-next" onClick={onDone}>
+          <span>Next</span>
         </button>
       </div>
     </div>
@@ -331,7 +329,7 @@ export default function FilmFlow({ shots, onExit, onRestart, controlsRef, initia
 
       <div className={`film-actions ${phase === 'review' ? 'on' : ''}`}>
         <button type="button" className="fa fa-retake" onClick={() => setPhase('ready')} tabIndex={phase === 'review' ? 0 : -1}>Retake</button>
-        <button type="button" className={`fa fa-next ${last ? 'is-finish' : ''}`} onClick={onNext} tabIndex={phase === 'review' ? 0 : -1}>
+        <button type="button" className="fa fa-next" onClick={onNext} tabIndex={phase === 'review' ? 0 : -1}>
           <span>{last ? 'Finish' : 'Next segment'}</span>
           {last ? (
             <svg width="19" height="14" viewBox="0 0 19 14" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

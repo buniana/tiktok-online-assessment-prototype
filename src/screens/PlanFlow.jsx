@@ -150,8 +150,10 @@ function PlanBlock({ plan, showCta, onReady }) {
 }
 
 // -------------------------------------------------------------------------------------------------
-export default function PlanFlow({ mic, lines, controlsRef, onPhase, onReadyToFilm, onBack, tts, kbTheme, waveStyle, simInput }) {
+export default function PlanFlow({ mic, lines, controlsRef, onPhase, onReadyToFilm, onBack, onLeaving, tts, kbTheme, waveStyle, simInput }) {
   const [shown, setShown] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const leaveTimer = useRef(0);
   const [phase, setPhase] = useState('enter'); // enter | listen1 | ask1 | listen2 | done | think | plan
   const [u, setU] = useState([EMPTY, EMPTY]);
   const [ai1, setAi1] = useState(null); // null | bottom | column | done
@@ -206,10 +208,25 @@ export default function PlanFlow({ mic, lines, controlsRef, onPhase, onReadyToFi
     later(() => setPhase((p) => (p === 'enter' ? 'listen1' : p)), 620);
     return () => {
       clearTimers();
+      clearTimeout(leaveTimer.current);
       window.speechSynthesis?.cancel();
+      mic.stop?.(); // leaving the feature lets go of the microphone
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Back (top-left of the plan screen): the chat slides back down while the camera screen comes back up, then the whole
+  // chat is thrown away, so the next tap on PLAN starts a fresh conversation.
+  const leave = useCallback(() => {
+    if (leaveTimer.current) return;
+    clearTimers();
+    window.speechSynthesis?.cancel();
+    inputRef.current?.blur();
+    setLeaving(true);
+    setShown(false);
+    onLeaving?.();
+    leaveTimer.current = setTimeout(() => onBack?.(), 480);
+  }, [clearTimers, onBack, onLeaving]);
 
   // The real microphone is only used while simulated sound input is off, so with it on nothing ever asks the browser for
   // the mic. Turning simulated sound on while the real mic is running lets go of it; turning it off asks for it.
@@ -415,7 +432,7 @@ export default function PlanFlow({ mic, lines, controlsRef, onPhase, onReadyToFi
   const typing = kbOpen && dockMode === 'bar';
   const heroLow = (phase === 'enter' || phase === 'listen1') && (u[0].stage === 'none' || u[0].stage === 'live');
   const listeningOn = dockMode === 'wave' && phase !== 'enter';
-  const cls = ['screen', 'flow', shown ? 'is-open' : '', planMode ? 'is-plan' : '', typing ? 'kb-open' : '', kbTouched ? 'kb-touched' : '']
+  const cls = ['screen', 'flow', shown ? 'is-open' : '', leaving ? 'is-leaving' : '', planMode ? 'is-plan' : '', typing ? 'kb-open' : '', kbTouched ? 'kb-touched' : '']
     .filter(Boolean)
     .join(' ');
   const lastPlanIdx = extra.reduce((acc, e, i) => (e.type === 'plan' ? i : acc), -1);
@@ -425,7 +442,7 @@ export default function PlanFlow({ mic, lines, controlsRef, onPhase, onReadyToFi
       <StatusBar />
 
       <header className="nav">
-        <button type="button" className="nav-back" aria-label="Back" onClick={onBack}>
+        <button type="button" className="nav-back" aria-label="Back" onClick={leave}>
           <ChevronLeft />
         </button>
         <h1 className="nav-title">PLAN</h1>

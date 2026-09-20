@@ -14,6 +14,7 @@ const params = new URLSearchParams(window.location.search);
 // gets shared as a link, unless the link says ?debug=1. (?debug=0 only starts the panel closed.) They never show on phones.
 const DEBUG_OK = params.get('debug') === '1' || !import.meta.env.PROD;
 const WIDE = window.innerWidth >= 900;
+const START_PARAMS = ['jump', 'open', 'ver', 'fseg', 'fphase', 'fp']; // URL shortcuts that choose the screen to start on (used by the test scripts)
 if (params.get('fit') === '0') document.documentElement.classList.add('pixel-mode');
 
 function useFit(reserveRight) {
@@ -40,6 +41,7 @@ export default function App() {
   const [filmKey, setFilmKey] = useState(0);
   const [filmInit, setFilmInit] = useState(null);
   const [flowKey, setFlowKey] = useState(0);
+  const [closing, setClosing] = useState(false); // the chat is sliding away: the camera screen comes back at the same time
   const [phase, setPhase] = useState(null);
   const [debugOpen, setDebugOpen] = useState(DEBUG_OK && WIDE && params.get('debug') !== '0');
   const [lines, setLines] = useState(SCRIPT.userTurns);
@@ -82,6 +84,7 @@ export default function App() {
   const scale = useFit(debugOpen ? 330 : 0);
 
   const openFlow = useCallback((jump) => {
+    setClosing(false);
     setFlowKey((k) => k + 1);
     setScreen('plan');
     if (typeof jump === 'string') setTimeout(() => controlsRef.current.jumpTo?.(jump), 90);
@@ -89,6 +92,7 @@ export default function App() {
 
   const restart = useCallback(() => {
     window.speechSynthesis?.cancel();
+    setClosing(false);
     setScreen('camera');
     setPhase(null);
     setFlowKey((k) => k + 1);
@@ -112,6 +116,12 @@ export default function App() {
   }, [setSim]);
 
   useEffect(() => {
+    // The start-screen shortcuts are used once, then taken off the address bar, so refreshing the page starts the flow from the beginning.
+    const url = new URL(window.location.href);
+    if (START_PARAMS.some((k) => url.searchParams.has(k))) {
+      START_PARAMS.forEach((k) => url.searchParams.delete(k));
+      window.history.replaceState(null, '', url);
+    }
     const jump = params.get('jump');
     if (jump === 'camera') return;
     if (jump === 'film') {
@@ -133,7 +143,7 @@ export default function App() {
     <div className="page" style={{ paddingRight: debugOpen ? 330 : 0 }}>
       <div className="stage-wrap" style={{ width: W * scale, height: H * scale }}>
         <div className="device" style={{ transform: `scale(${scale})` }}>
-          <CameraScreen onPlan={() => openFlow()} receding={screen !== 'camera'} showHint={showHint && screen === 'camera'} />
+          <CameraScreen onPlan={() => openFlow()} receding={screen !== 'camera' && !closing} showHint={showHint && screen === 'camera'} />
 
           {(screen === 'plan' || screen === 'film') && (
             <PlanFlow
@@ -147,6 +157,7 @@ export default function App() {
               controlsRef={controlsRef}
               onPhase={setPhase}
               onBack={restart}
+              onLeaving={() => setClosing(true)}
               onReadyToFilm={(plan) => openFilm(plan)}
             />
           )}
